@@ -1,22 +1,25 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import { createStore, applyMiddleware, combineReducers } from 'redux';
+import {createStore, applyMiddleware, combineReducers, AnyAction} from 'redux';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+import { State, Auth } from './types'
+import { listAlbums, albums, listAlbumsEpic } from './albums';
 
-
-const epicMiddleware = createEpicMiddleware();
+const epicMiddleware = createEpicMiddleware<AnyAction, AnyAction, State, any>();
 
 const store = createStore(
-    combineReducers({ albums, auth }),
+    combineReducers({ albums }),
     applyMiddleware(epicMiddleware)
 );
 
 epicMiddleware.run(combineEpics(listAlbumsEpic));
+
+store.dispatch(listAlbums());
 
 const render = () => {
     ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
