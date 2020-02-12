@@ -69,13 +69,13 @@ export const listAlbumsEpic = (action$: Observable<Action>, state$: StateObserva
             return ajax({ url, headers: { Authorization: "Bearer " + auth.token }}).pipe(
                 map(response => response.response),
                 map(data => ({...data, pageToken })),
-                map(data => albumsSuccess(data))
+                map(data => albumsSuccess(data)),
+                catchError(err => {
+                    console.error(err);
+                    return of(albumsFailed(err))
+                })
             )
-        }),
-        catchError(err => {
-                return of(albumsFailed(err))
-            }
-        )
+        })
     );
 
 // https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100
