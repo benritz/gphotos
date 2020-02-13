@@ -1,38 +1,44 @@
 import { ofType, StateObservable } from 'redux-observable';
 import { Observable, of, throwError } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { map, mergeMap, switchMap, catchError, withLatestFrom, tap } from 'rxjs/operators'
+import { map, mergeMap, switchMap, catchError, withLatestFrom } from 'rxjs/operators'
 import { Action } from 'redux'
 
 import { State, ErrorAction } from './types'
+import {authRefresh} from "./auth";
 
 export const MEDIA_ITEMS_LIST = 'MEDIA_ITEMS_LIST';
 export const MEDIA_ITEMS_SUCCESS = 'MEDIA_ITEMS_SUCCESS';
 export const MEDIA_ITEMS_FAILED = 'MEDIA_ITEMS_FAILED';
 
 export interface MediaItemsListAction extends Action {
-    type: typeof MEDIA_ITEMS_LIST;
-    pageToken?: string;
+    type: typeof MEDIA_ITEMS_LIST
+    pageToken?: string
 }
 
 export interface MediaItemsSuccessAction extends Action {
-    type: typeof MEDIA_ITEMS_SUCCESS;
-    result: MediaItemsResult;
+    type: typeof MEDIA_ITEMS_SUCCESS
+    result: MediaItemsResult
 }
 
 export interface MediaItemsFailedAction extends ErrorAction {
-    type: typeof MEDIA_ITEMS_FAILED;
+    type: typeof MEDIA_ITEMS_FAILED
+}
+
+export enum MediaItemsState {
+    Initial, Loading, MoreResults, Complete,  Error
 }
 
 export interface MediaItem {
-    id: string;
-    baseUrl: string;
-    productUrl: string;
+    id: string
+    baseUrl: string
+    productUrl: string
 }
 
 export interface MediaItemsResult {
-    mediaItems: MediaItem[];
-    nextPageToken?: string;
+    state: MediaItemsState
+    mediaItems: MediaItem[]
+    nextPageToken?: string
 }
 
 export const mediaItemsList = (pageToken?: string): MediaItemsListAction => ({ type: MEDIA_ITEMS_LIST, pageToken });
@@ -41,14 +47,17 @@ export const mediaItemsFailed = (error: {}): MediaItemsFailedAction => ({ type: 
 
 export type MediaItemsActionTypes = MediaItemsListAction | MediaItemsSuccessAction | MediaItemsFailedAction
 
-const initialState: MediaItemsResult = { mediaItems: [] };
+const initialState: MediaItemsResult = { state: MediaItemsState.Initial, mediaItems: [] };
 
 export const mediaItemsReducer = (state = initialState, action: MediaItemsActionTypes) => {
     switch (action.type) {
+        case MEDIA_ITEMS_LIST:
+            return { ...state, state: MediaItemsState.Loading };
         case MEDIA_ITEMS_SUCCESS:
-            return { mediaItems:  state.mediaItems.concat(action.result.mediaItems), nextPageToken: action.result.nextPageToken }
+            const nextPageToken = action.result.nextPageToken;
+            return { state: nextPageToken ? MediaItemsState.MoreResults : MediaItemsState.Complete, mediaItems:  state.mediaItems.concat(action.result.mediaItems), nextPageToken: nextPageToken };
         case MEDIA_ITEMS_FAILED:
-            return "Failed to get media items: " + action.error;
+            return { ...state, state: MediaItemsState.Error };
         default:
             return state;
     }
@@ -68,11 +77,14 @@ export const listMediaItemsEpic = (action$: Observable<Action>, state$: StateObs
             return ajax({ url, headers: { Authorization: "Bearer " + auth.token }}).pipe(
                 map(response => response.response),
                 map(data => ({ mediaItems: [], ...data })),
-                tap((data) => { console.log(data); }),
                 map(data => mediaItemsSuccess(data)),
                 catchError(err => {
-                    console.error(err);
-                    return of(mediaItemsFailed(err))
+                    const actions: Action[] = [mediaItemsFailed(err)];
+                    if (err.status === 401) {
+                        actions.push(authRefresh());
+                    }
+
+                    return of(...actions);
                 })
             )
         })

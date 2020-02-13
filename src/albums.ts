@@ -1,10 +1,11 @@
 import { ofType, StateObservable } from 'redux-observable';
 import { Observable, of, throwError } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { map, mergeMap, switchMap, catchError, withLatestFrom, tap } from 'rxjs/operators'
+import { map, mergeMap, switchMap, catchError, withLatestFrom } from 'rxjs/operators'
 import { Action } from 'redux'
 
 import { State, ErrorAction } from './types'
+import {authRefresh} from "./auth";
 
 export const ALBUMS_LIST = 'ALBUMS_LIST';
 export const ALBUMS_SUCCESS = 'ALBUMS_SUCCESS';
@@ -24,17 +25,22 @@ export interface AlbumsFailedAction extends ErrorAction {
     type: typeof ALBUMS_FAILED;
 }
 
+export enum AlbumsState {
+    Initial, Loading, MoreResults, Complete,  Error
+}
+
 export interface Album {
     id: string;
     title: string;
 }
 
-export interface Albums {
-    albums: Album[];
-    nextPageToken?: string;
+export interface AlbumsResult {
+    state: AlbumsState
+    albums: Album[]
+    nextPageToken?: string
 }
 
-export interface AlbumsResponse extends Albums {
+export interface AlbumsResponse extends AlbumsResult {
     pageToken?: string;
 }
 
@@ -44,12 +50,17 @@ export const albumsFailed = (error: {}): AlbumsFailedAction => ({ type: ALBUMS_F
 
 export type AlbumsActionTypes = AlbumsListAction | AlbumsSuccessAction | AlbumsFailedAction
 
-export const albumsReducer = (state: Albums = { albums: [] }, action: AlbumsActionTypes) => {
+const initialState: AlbumsResult = { state: AlbumsState.Initial, albums: [] };
+
+export const albumsReducer = (state = initialState, action: AlbumsActionTypes) => {
     switch (action.type) {
+        case ALBUMS_LIST:
+            return { ...state, state: AlbumsState.Loading };
         case ALBUMS_SUCCESS:
-            return { albums:  state.albums.concat(action.albumsResp.albums), nextPageToken: action.albumsResp.nextPageToken }
+            const nextPageToken = action.albumsResp.nextPageToken;
+            return { state: nextPageToken ? AlbumsState.MoreResults : AlbumsState.Complete, albums: state.albums.concat(action.albumsResp.albums), nextPageToken: nextPageToken };
         case ALBUMS_FAILED:
-            return "Failed to get albums: " + action.error;
+            return { ...state, state: AlbumsState.Error };
         default:
             return state;
     }
@@ -71,8 +82,13 @@ export const listAlbumsEpic = (action$: Observable<Action>, state$: StateObserva
                 map(data => ({ albums: [], ...data, pageToken })),
                 map(data => albumsSuccess(data)),
                 catchError(err => {
-                    console.error(err);
-                    return of(albumsFailed(err))
+                    const actions: Action[] = [albumsFailed(err)];
+
+                    if (err.status === 401) {
+                        actions.push(authRefresh());
+                    }
+
+                    return of(...actions);
                 })
             )
         })

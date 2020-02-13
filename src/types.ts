@@ -1,5 +1,5 @@
 import {Action} from "redux";
-import {Albums} from "./albums";
+import {AlbumsResult} from "./albums";
 import {MediaItemsResult} from "./mediaItems";
 
 export interface Auth {
@@ -8,7 +8,7 @@ export interface Auth {
 
 export interface State {
     auth?: Auth;
-    albums: Albums;
+    albums: AlbumsResult;
     mediaItems: MediaItemsResult;
 }
 

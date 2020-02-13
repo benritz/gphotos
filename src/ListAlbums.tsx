@@ -1,32 +1,41 @@
 import React from "react"
 import {useDispatch, useSelector} from 'react-redux'
-import {Album, Albums, albumsList} from "./albums";
+import {Album, albumsList, AlbumsResult, AlbumsState} from "./albums";
 import {State} from "./types";
 
 const ListAlbums = () => {
-    const albums = useSelector<State, Albums>(state => state.albums);
+    const albumsResult = useSelector<State, AlbumsResult>(state => state.albums);
     const dispatch = useDispatch();
 
-    if (albums.albums.length) {
-        const items = albums
-            .albums
-            .map((album: Album) => (<li key={album.id}>{album.title}</li>));
+    let stateMessage;
 
-        let button;
-
-        if (albums.nextPageToken) {
-            button = <button onClick={() => { dispatch(albumsList(albums.nextPageToken)) }}>More&hellip;</button>;
-        }
-
-        return (
-            <div>
-                <ul className="ListAlbums">{items}</ul>
-                {button}
-            </div>
-        );
-    } else {
-        return <p>You have no albums.</p>;
+    switch (albumsResult.state) {
+        case AlbumsState.Initial:
+            break;
+        case AlbumsState.Loading:
+            stateMessage = <p>Loading your albums&hellip;</p>;
+            break;
+        case AlbumsState.MoreResults:
+            console.log('MORE RESULTS');
+            const listNext = () => { dispatch(albumsList(albumsResult.nextPageToken)) };
+            stateMessage = <button onClick={listNext}>More&hellip;</button>;
+            //setTimeout(listNext, 0);
+            break;
+        case AlbumsState.Complete:
+            if (albumsResult.albums.length === 0) {
+                stateMessage = <p>You have no albums.</p>;
+            }
+            break;
+        case AlbumsState.Error:
+            stateMessage = <p>There was a problem listing your albums.</p>;
+            break;
     }
+
+    const listItems = albumsResult
+        .albums
+        .map((album: Album) => (<li key={album.id}>{album.title}</li>));
+
+    return <div><ul className="ListAlbums">{listItems}</ul>{stateMessage}</div>
 };
 
 export default ListAlbums;
