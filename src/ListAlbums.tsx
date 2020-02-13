@@ -7,20 +7,26 @@ const ListAlbums = () => {
     const albums = useSelector<State, Albums>(state => state.albums);
     const dispatch = useDispatch();
 
-    const items = albums
-        .albums
-        .map((album: Album) => (<li key={album.id}>{album.title}</li>));
+    if (albums.albums.length) {
+        const items = albums
+            .albums
+            .map((album: Album) => (<li key={album.id}>{album.title}</li>));
 
-    const list = <ul className="ListAlbums">{items}</ul>;
+        let button;
 
-    const button = albums.nextPageToken ? <button onClick={() => { dispatch(albumsList(albums.nextPageToken)) }}>More&hellip;</button> : null;
+        if (albums.nextPageToken) {
+            button = <button onClick={() => { dispatch(albumsList(albums.nextPageToken)) }}>More&hellip;</button>;
+        }
 
-    return (
-        <div>
-            {list}
-            {button}
-        </div>
-    );
+        return (
+            <div>
+                <ul className="ListAlbums">{items}</ul>
+                {button}
+            </div>
+        );
+    } else {
+        return <p>You have no albums.</p>;
+    }
 };
 
 export default ListAlbums;

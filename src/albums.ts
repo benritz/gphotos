@@ -1,7 +1,7 @@
 import { ofType, StateObservable } from 'redux-observable';
 import { Observable, of, throwError } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { map, mergeMap, switchMap, catchError, withLatestFrom } from 'rxjs/operators'
+import { map, mergeMap, switchMap, catchError, withLatestFrom, tap } from 'rxjs/operators'
 import { Action } from 'redux'
 
 import { State, ErrorAction } from './types'
@@ -49,7 +49,7 @@ export const albumsReducer = (state: Albums = { albums: [] }, action: AlbumsActi
         case ALBUMS_SUCCESS:
             return { albums:  state.albums.concat(action.albumsResp.albums), nextPageToken: action.albumsResp.nextPageToken }
         case ALBUMS_FAILED:
-            return "Failed to get albumsReducer: " + action.error;
+            return "Failed to get albums: " + action.error;
         default:
             return state;
     }
@@ -68,7 +68,7 @@ export const listAlbumsEpic = (action$: Observable<Action>, state$: StateObserva
 
             return ajax({ url, headers: { Authorization: "Bearer " + auth.token }}).pipe(
                 map(response => response.response),
-                map(data => ({...data, pageToken })),
+                map(data => ({ albums: [], ...data, pageToken })),
                 map(data => albumsSuccess(data)),
                 catchError(err => {
                     console.error(err);
@@ -77,5 +77,3 @@ export const listAlbumsEpic = (action$: Observable<Action>, state$: StateObserva
             )
         })
     );
-
-// https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100

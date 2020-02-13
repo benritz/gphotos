@@ -1,0 +1,3 @@
+ul.ListMediaItems { display: flex; flex-wrap: wrap; justify-content: space-between; list-style: none; }
+.ListMediaItems li { height: 200px; }
+.ListMediaItems img { max-height: 200px; }

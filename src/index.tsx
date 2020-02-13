@@ -11,15 +11,16 @@ import * as serviceWorker from './serviceWorker';
 import { State } from './types'
 import { authSignOn, authReducer } from './auth';
 import { albumsList, albumsReducer, listAlbumsEpic } from './albums';
+import { mediaItemsList, mediaItemsReducer, listMediaItemsEpic } from './mediaItems';
 
 const epicMiddleware = createEpicMiddleware<AnyAction, AnyAction, State, any>();
 
 const store = createStore(
-    combineReducers({ auth: authReducer, albums: albumsReducer }),
+    combineReducers({ auth: authReducer, albums: albumsReducer, mediaItems: mediaItemsReducer }),
     applyMiddleware(epicMiddleware)
 );
 
-epicMiddleware.run(combineEpics(listAlbumsEpic));
+epicMiddleware.run(combineEpics(listAlbumsEpic, listMediaItemsEpic));
 
 const render = () => {
     ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
@@ -38,6 +39,7 @@ const authenticate = () => {
         if (access_token) {
             store.dispatch(authSignOn(access_token as string));
             store.dispatch(albumsList());
+            store.dispatch(mediaItemsList());
             return;
         }
     }
