@@ -22,7 +22,7 @@ const ListMediaItems = () => {
 
         return (
             <div>
-                <ul className="ListMediaItems">{items}</ul>
+                <ul className="ListMediaItems">{items}<li></li></ul>
                 {button}
             </div>
         );
