@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import {createStore, applyMiddleware, combineReducers, AnyAction} from 'redux';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
+import logger from 'redux-logger'
 
 import './index.css';
 import App from './App';
@@ -14,9 +15,12 @@ import { mediaItemsList, mediaItemsReducer, listMediaItemsEpic } from './mediaIt
 
 const epicMiddleware = createEpicMiddleware<AnyAction, AnyAction, State, any>();
 
+// TODO check out https://github.com/tappleby/redux-batched-subscribe to prevent multiple actions causing multiple renders
+// i.e. ALBUMS_LIST > ALBUMS_SUCCESS causing two renders
+
 const store = createStore(
     combineReducers({ auth: authReducer, albums: albumsReducer, mediaItems: mediaItemsReducer }),
-    applyMiddleware(epicMiddleware)
+    applyMiddleware(logger, epicMiddleware)
 );
 
 epicMiddleware.run(combineEpics(listAlbumsEpic, listMediaItemsEpic, authRefreshEpic));
@@ -31,6 +35,7 @@ store.subscribe(render);
 const authenticate = () => {
     const token = authGetToken();
     if (token)  {
+        // TODO change to use batch()
         store.dispatch(authSignOn(token as string));
         store.dispatch(albumsList());
         store.dispatch(mediaItemsList());
