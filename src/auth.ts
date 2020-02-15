@@ -3,7 +3,9 @@ import {EMPTY, Observable} from "rxjs";
 import {ofType, StateObservable} from "redux-observable";
 import {map, tap} from "rxjs/operators";
 import queryString from "query-string";
-import {State} from "./types";
+import { produce } from 'immer';
+
+import {Auth, State} from "./types";
 
 export const AUTH_SIGN_ON = 'AUTH_SIGN_ON';
 export const AUTH_REFRESH = 'AUTH_REFRESH';
@@ -22,16 +24,20 @@ export type AuthActionTypes = AuthSignOnAction | AuthRefreshAction
 export const authSignOn = (token: string): AuthSignOnAction => ({ type: AUTH_SIGN_ON, token });
 export const authRefresh = (): AuthRefreshAction => ({ type: AUTH_REFRESH });
 
-export const authReducer = (state = null, action: AuthActionTypes) => {
-    switch (action.type) {
-        case AUTH_SIGN_ON:
-            return { token: action.token};
-        case AUTH_REFRESH:
-            return null;
-        default:
-            return state;
-    }
-};
+const initialState: Auth = {};
+
+export const authReducer = produce((draft: Auth, action: AuthActionTypes) => {
+        switch (action.type) {
+            case AUTH_SIGN_ON:
+                draft.token = action.token;
+                break;
+            case AUTH_REFRESH:
+                draft.token = undefined;
+                break;
+        }
+    },
+    initialState
+);
 
 export const authRefreshEpic = (action$: Observable<Action>, state$: StateObservable<State>) =>
     action$.pipe(

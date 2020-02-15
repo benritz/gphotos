@@ -3,11 +3,11 @@ import {AlbumsResult} from "./albums";
 import {MediaItemsResult} from "./mediaItems";
 
 export interface Auth {
-    token: string;
+    token?: string;
 }
 
 export interface State {
-    auth?: Auth;
+    auth: Auth;
     albums: AlbumsResult;
     mediaItems: MediaItemsResult;
 }
