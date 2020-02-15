@@ -62,8 +62,11 @@ export const albumsReducer = produce((draft: AlbumsResult, action: AlbumsActionT
             case ALBUMS_SUCCESS:
                 const { albums, nextPageToken } = action.albumsResp;
 
+                if (albums) {
+                    draft.albums.push(...albums);
+                }
+
                 draft.state = nextPageToken ? AlbumsState.MoreResults : AlbumsState.Complete;
-                draft.albums.push(...albums);
                 draft.nextPageToken = nextPageToken;
                 draft.numLoadedPages++;
                 break;

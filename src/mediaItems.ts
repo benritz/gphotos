@@ -66,10 +66,13 @@ export const mediaItemsReducer = produce((draft: MediaItemsResult, action: Media
 
                 break;
             case MEDIA_ITEMS_SUCCESS:
-                const nextPageToken = action.result.nextPageToken;
+                const { nextPageToken, mediaItems } = action.result;
+
+                if (mediaItems) {
+                    draft.mediaItems.push(...mediaItems);
+                }
 
                 draft.state = nextPageToken ? MediaItemsState.MoreResults : MediaItemsState.Complete;
-                draft.mediaItems.push(...action.result.mediaItems);
                 draft.nextPageToken = nextPageToken;
                 draft.numLoadedPages++;
                 break;
