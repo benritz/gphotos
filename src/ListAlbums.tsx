@@ -6,18 +6,25 @@ import {Album, albumsList, AlbumsResult, AlbumsState} from "./albums"
 import {State} from "./types"
 
 import './ListAlbums.css'
+import {mediaItemsList} from "./mediaItems";
 
 const ListAlbumsList = () => {
     const albums = useSelector(createSelector<State, AlbumsResult, Album[]>(
         (state) => state.albums,
         (albumsResult) => albumsResult.albums));
 
+    const dispatch = useDispatch();
+
+    const listMediaItems = (album: Album) => { dispatch(mediaItemsList(album.id)); };
+
     const albumThumbnail = (album: Album) => {
         return <li key={album.id}>
-            <figure>
-                <img src={album.coverPhotoBaseUrl} alt={album.title} />
-                <figcaption>{album.title}</figcaption>
-            </figure>
+            <a onClick={() => { listMediaItems(album) }}>
+                <figure>
+                    <img src={album.coverPhotoBaseUrl} alt={album.title} />
+                    <figcaption>{album.title}</figcaption>
+                </figure>
+            </a>
         </li>;
     };
 
