@@ -6,8 +6,12 @@ import ListMediaItems from "./ListMediaItems";
 const App = () => {
     return (
         <div className="App">
-            <ListAlbums/>
-            <ListMediaItems/>
+            <aside>
+                <ListAlbums/>
+            </aside>
+            <main>
+                <ListMediaItems/>
+            </main>
         </div>
     );
 };

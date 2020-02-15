@@ -11,6 +11,10 @@ import {authRefresh} from "./auth";
 export interface Album {
     id: string;
     title: string;
+    productUrl: string;
+    mediaItemsCount: number;
+    coverPhotoBaseUrl: string;
+    coverPhotoMediaItemId: string;
 }
 
 export enum AlbumsState {
@@ -56,10 +60,10 @@ export const albumsReducer = produce((draft: AlbumsResult, action: AlbumsActionT
                 draft.state = AlbumsState.Loading;
                 break;
             case ALBUMS_SUCCESS:
-                const nextPageToken = action.albumsResp.nextPageToken;
+                const { albums, nextPageToken } = action.albumsResp;
 
                 draft.state = nextPageToken ? AlbumsState.MoreResults : AlbumsState.Complete;
-                draft.albums.push(...action.albumsResp.albums);
+                draft.albums.push(...albums);
                 draft.nextPageToken = nextPageToken;
                 draft.numLoadedPages++;
                 break;
@@ -75,7 +79,7 @@ export const listAlbumsEpic = (action$: Observable<Action>, state$: StateObserva
     action$.pipe(
         ofType<Action, AlbumsListAction>(ALBUMS_LIST),
         withLatestFrom(state$),
-        mergeMap(([action, state]) => state.auth ? of({ pageToken: action.pageToken, auth: state.auth }) : throwError('No auth')),
+        mergeMap(([{pageToken}, {auth}]) => auth.token ? of({ pageToken, auth }) : throwError('No auth token')),
         switchMap(({ pageToken, auth }) => {
             let url = 'https://photoslibrary.googleapis.com/v1/albums?pageSize=50';
             if (pageToken) {

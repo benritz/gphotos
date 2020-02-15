@@ -1,0 +1,7 @@
+.ListAlbums { display: flex; flex-direction: column; min-width: 300px; }
+.ListAlbums h2 { margin: 10px 0; }
+
+.ListAlbums ul { list-style: none; margin: 0; padding: 0; }
+.ListAlbums figure { position: relative; display: block; width: 100%; height: 150px; margin: 0; }
+.ListAlbums figure img { position: absolute; left: 0; right: 0; top: 0; bottom: 0; width: 100%; height: 100%; object-fit: cover; }
+.ListAlbums figcaption { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px; text-align: center; background-color: rgba(50, 50, 50, 0.8) }
