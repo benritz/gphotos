@@ -1,12 +1,16 @@
 import React from 'react';
-import './App.css';
+
+import SearchOptions from "./SearchOptions";
 import ListAlbums from "./ListAlbums";
 import ListMediaItems from "./ListMediaItems";
+
+import './App.css';
 
 const App = () => {
     return (
         <div className="App">
             <aside>
+                <SearchOptions/>
                 <ListAlbums/>
             </aside>
             <main>

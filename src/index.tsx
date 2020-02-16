@@ -10,8 +10,8 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { State } from './types'
 import {authSignOn, authReducer, authRedirect, authGetToken, authRefreshEpic} from './auth';
-import { albumsList, albumsReducer, listAlbumsEpic } from './albums';
-import { mediaItemsList, mediaItemsReducer, listMediaItemsEpic } from './mediaItems';
+import { albumsList, albumsReducer, albumsListEpic } from './albums';
+import { mediaItemsList, mediaItemsReducer, mediaItemsListEpic } from './mediaItems';
 
 const epicMiddleware = createEpicMiddleware<AnyAction, AnyAction, State, any>();
 
@@ -23,7 +23,7 @@ const store = createStore(
     applyMiddleware(logger, epicMiddleware)
 );
 
-epicMiddleware.run(combineEpics(listAlbumsEpic, listMediaItemsEpic, authRefreshEpic));
+epicMiddleware.run(combineEpics(albumsListEpic, mediaItemsListEpic, authRefreshEpic));
 
 const authenticate = () => {
     const token = authGetToken();

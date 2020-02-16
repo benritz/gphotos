@@ -4,6 +4,7 @@ import { ajax, AjaxRequest } from 'rxjs/ajax'
 import {map, mergeMap, switchMap, catchError, withLatestFrom} from 'rxjs/operators'
 import { Action } from 'redux'
 import { produce } from 'immer';
+import queryString from 'querystring';
 
 import { State, ErrorAction } from './types'
 import {authRefresh} from "./auth";
@@ -16,6 +17,7 @@ export interface MediaItem {
     id: string
     baseUrl: string
     productUrl: string
+    filename: string;
 }
 
 export interface MediaItemsResult {
@@ -27,8 +29,8 @@ export interface MediaItemsResult {
 }
 
 export const MEDIA_ITEMS_LIST = 'MEDIA_ITEMS_LIST';
-export const MEDIA_ITEMS_SUCCESS = 'MEDIA_ITEMS_SUCCESS';
-export const MEDIA_ITEMS_FAILED = 'MEDIA_ITEMS_FAILED';
+export const MEDIA_ITEMS_LIST_SUCCESS = 'MEDIA_ITEMS_LIST_SUCCESS';
+export const MEDIA_ITEMS_LIST_FAILED = 'MEDIA_ITEMS_LIST_FAILED';
 
 export interface MediaItemsListAction extends Action {
     type: typeof MEDIA_ITEMS_LIST
@@ -36,20 +38,21 @@ export interface MediaItemsListAction extends Action {
     pageToken?: string
 }
 
-export interface MediaItemsSuccessAction extends Action {
-    type: typeof MEDIA_ITEMS_SUCCESS
-    result: MediaItemsResult
+export interface MediaItemsListSuccessAction extends Action {
+    type: typeof MEDIA_ITEMS_LIST_SUCCESS
+    mediaItems: MediaItem[]
+    nextPageToken?: string
 }
 
-export interface MediaItemsFailedAction extends ErrorAction {
-    type: typeof MEDIA_ITEMS_FAILED
+export interface MediaItemsListFailedAction extends ErrorAction {
+    type: typeof MEDIA_ITEMS_LIST_FAILED
 }
 
 export const mediaItemsList = (albumId?: string, pageToken?: string): MediaItemsListAction => ({ type: MEDIA_ITEMS_LIST, albumId, pageToken });
-export const mediaItemsSuccess = (result: MediaItemsResult): MediaItemsSuccessAction => ({ type: MEDIA_ITEMS_SUCCESS, result });
-export const mediaItemsFailed = (error: {}): MediaItemsFailedAction => ({ type: MEDIA_ITEMS_FAILED, error });
+export const mediaItemsListSuccess = (mediaItems: MediaItem[], nextPageToken?: string): MediaItemsListSuccessAction => ({ type: MEDIA_ITEMS_LIST_SUCCESS, mediaItems, nextPageToken });
+export const mediaItemsListFailed = (error: {}): MediaItemsListFailedAction => ({ type: MEDIA_ITEMS_LIST_FAILED, error });
 
-export type MediaItemsActionTypes = MediaItemsListAction | MediaItemsSuccessAction | MediaItemsFailedAction
+export type MediaItemsActionTypes = MediaItemsListAction | MediaItemsListSuccessAction | MediaItemsListFailedAction
 
 const initialState: MediaItemsResult = { state: MediaItemsState.Initial, mediaItems: [], numLoadedPages: 0 };
 
@@ -65,8 +68,8 @@ export const mediaItemsReducer = produce((draft: MediaItemsResult, action: Media
                 draft.albumId = action.albumId;
 
                 break;
-            case MEDIA_ITEMS_SUCCESS:
-                const { nextPageToken, mediaItems } = action.result;
+            case MEDIA_ITEMS_LIST_SUCCESS:
+                const { nextPageToken, mediaItems } = action;
 
                 if (mediaItems) {
                     draft.mediaItems.push(...mediaItems);
@@ -76,7 +79,7 @@ export const mediaItemsReducer = produce((draft: MediaItemsResult, action: Media
                 draft.nextPageToken = nextPageToken;
                 draft.numLoadedPages++;
                 break;
-            case MEDIA_ITEMS_FAILED:
+            case MEDIA_ITEMS_LIST_FAILED:
                 draft.state = MediaItemsState.Error;
                 break;
         }
@@ -84,7 +87,7 @@ export const mediaItemsReducer = produce((draft: MediaItemsResult, action: Media
     initialState
 );
 
-export const listMediaItemsEpic = (action$: Observable<Action>, state$: StateObservable<State>) =>
+export const mediaItemsListEpic = (action$: Observable<Action>, state$: StateObservable<State>) =>
     action$.pipe(
         ofType<Action, MediaItemsListAction>(MEDIA_ITEMS_LIST),
         withLatestFrom(state$),
@@ -95,30 +98,32 @@ export const listMediaItemsEpic = (action$: Observable<Action>, state$: StateObs
                 headers: { Authorization: "Bearer " + auth.token }
             };
 
+            const fields: any = { pageSize: 100 };
+
+            if (pageToken) {
+                fields['pageToken'] = pageToken;
+            }
+
             if (albumId) {
                 req.url += ':search';
-
                 req.method = 'POST';
 
-                const body: any = { albumId, pageSize: 100 };
-                if (pageToken) {
-                    body['pageToken'] = pageToken;
+                if (albumId) {
+                    fields['albumId'] = albumId;
                 }
+            }
 
-                req.body = body;
+            if (req.method === 'POST') {
+                req.body = fields;
             } else {
-                req.url += '?pageSize=100';
-
-                if (pageToken) {
-                    req.url += '&pageToken=' + encodeURIComponent(pageToken);
-                }
+                req.url += '?' + queryString.stringify(fields);
             }
 
             return ajax(req).pipe(
                 map(response => response.response),
-                map(data => mediaItemsSuccess(data)),
+                map(({mediaItems, nextPageToken}) => mediaItemsListSuccess(mediaItems, nextPageToken)),
                 catchError(err => {
-                    const actions: Action[] = [mediaItemsFailed(err)];
+                    const actions: Action[] = [mediaItemsListFailed(err)];
                     if (err.status === 401) {
                         actions.push(authRefresh());
                     }

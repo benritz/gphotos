@@ -1,47 +1,63 @@
 import React, {useEffect} from "react"
 import {useDispatch, useSelector} from 'react-redux'
-import {createSelector} from "reselect";
+import {createSelector} from "reselect"
 
-import {MediaItem, mediaItemsList, MediaItemsResult, MediaItemsState} from "./mediaItems";
-import {State} from "./types";
+import {MediaItem, mediaItemsList, MediaItemsResult, MediaItemsState} from "./mediaItems"
+import {AlbumsResult} from "./albums"
+import {State} from "./types"
+import {scrolledToBottom} from "./helpers"
 
-import './ListMediaItems.css';
+import './ListMediaItems.css'
+
+const ListMediaItemsTitle = () => {
+    const title = useSelector(createSelector<State, MediaItemsResult, AlbumsResult, string>(
+        (state) => state.mediaItems,
+        (state) => state.albums,
+        (mediaItemsResult, albumsResult) => {
+            const { albumId } = mediaItemsResult;
+            if (albumId) {
+                const album = albumsResult.albums.find(album => album.id === albumId);
+                if (album) {
+                    return album.title;
+                }
+            }
+            return 'Your photos';
+        }));
+
+    return <h1>{title}</h1>;
+};
 
 const ListMediaItemsList = () => {
     const mediaItems = useSelector(createSelector<State, MediaItemsResult, MediaItem[]>(
         (state) => state.mediaItems,
         (mediaItemsResult) => mediaItemsResult.mediaItems));
 
-    const listItems = mediaItems.map((mediaItem: MediaItem) => (<li key={mediaItem.id}><img src={mediaItem.baseUrl} /></li>));
+    const listItems = mediaItems.map((mediaItem: MediaItem) => (<li key={mediaItem.id}><a href={mediaItem.productUrl}><img src={mediaItem.baseUrl} alt={mediaItem.filename} /></a></li>));
 
-    return <ul>{listItems}<li>&nbsp;</li></ul>
+    return listItems.length ? <ul>{listItems}<li>&nbsp;</li></ul> : null;
 };
 
-
 const ListMediaItemsStatus = () => {
-    const {state, mediaItems, albumId, numLoadedPages, nextPageToken} = useSelector<State, MediaItemsResult>((state) => state.mediaItems);
+    const {
+        state,
+        mediaItems,
+        albumId,
+        nextPageToken
+    } = useSelector<State, MediaItemsResult>((state) => state.mediaItems);
 
     const dispatch = useDispatch();
 
-    // auto load pages then use a button to load more
-    const AUTO_LOAD_COUNT = 3;
-    const listNext = () => { dispatch(mediaItemsList(albumId, nextPageToken)) };
-    const autoLoadNext = () => state === MediaItemsState.MoreResults && numLoadedPages < AUTO_LOAD_COUNT;
-
     useEffect(() => {
-        if (autoLoadNext()) {
-            listNext();
+        if (state === MediaItemsState.MoreResults) {
+            return scrolledToBottom('main', () => {
+                dispatch(mediaItemsList(albumId, nextPageToken));
+            });
         }
     });
 
     switch (state) {
         case MediaItemsState.Loading:
             return <p className="status loading">Loading your photos and videos&hellip;</p>;
-        case MediaItemsState.MoreResults:
-            if (!autoLoadNext()) {
-                return <button className="action" onClick={listNext}>Show more photos and videos</button>;
-            }
-            break;
         case MediaItemsState.Complete:
             if (mediaItems.length === 0) {
                 return <p className="status empty">You have no photos or videos.</p>;
@@ -54,8 +70,12 @@ const ListMediaItemsStatus = () => {
     return null;
 };
 
-const ListMediaItems = () => {
-    return <div className="ListMediaItems"><h2>Photos</h2><ListMediaItemsList/><ListMediaItemsStatus/></div>
-};
+const ListMediaItems = () => (
+    <div className="ListMediaItems">
+        <ListMediaItemsTitle/>
+        <ListMediaItemsList/>
+        <ListMediaItemsStatus/>
+    </div>
+);
 
 export default ListMediaItems;

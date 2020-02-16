@@ -78,7 +78,7 @@ export const albumsReducer = produce((draft: AlbumsResult, action: AlbumsActionT
     initialState
 );
 
-export const listAlbumsEpic = (action$: Observable<Action>, state$: StateObservable<State>) =>
+export const albumsListEpic = (action$: Observable<Action>, state$: StateObservable<State>) =>
     action$.pipe(
         ofType<Action, AlbumsListAction>(ALBUMS_LIST),
         withLatestFrom(state$),
