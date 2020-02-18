@@ -71,10 +71,7 @@ export const mediaItemsReducer = produce((draft: MediaItemsResult, action: Media
             case MEDIA_ITEMS_LIST_SUCCESS:
                 const { nextPageToken, mediaItems } = action;
 
-                if (mediaItems) {
-                    draft.mediaItems.push(...mediaItems);
-                }
-
+                draft.mediaItems.push(...(mediaItems || []));
                 draft.state = nextPageToken ? MediaItemsState.MoreResults : MediaItemsState.Complete;
                 draft.nextPageToken = nextPageToken;
                 draft.numLoadedPages++;

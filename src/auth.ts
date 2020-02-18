@@ -59,12 +59,14 @@ export const authGetToken = () => {
 };
 
 export const authRedirect = () => {
+    const loc = window.location;
+
     const params = {
         client_id: '1027230636453-aip8qkthi84iap126q3hvjma837cmd2f.apps.googleusercontent.com',
-        redirect_uri: 'http://localhost:3000',
+        redirect_uri: loc.origin + loc.pathname,
         response_type: 'token',
         scope:  'https://www.googleapis.com/auth/photoslibrary.readonly',
-        state: '123456'
+        //state: '123456'
     };
 
     window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + queryString.stringify(params);
