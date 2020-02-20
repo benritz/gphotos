@@ -3,7 +3,7 @@ import {useDispatch, useSelector} from 'react-redux'
 import {createSelector} from "reselect"
 
 import {Album, albumsList, AlbumsResult, AlbumsState} from "./albums"
-import {mediaItemsList} from "./mediaItems"
+import {mediaItemsOpen} from "./mediaItems"
 import {State} from "./types"
 import {scrolledToBottom} from "./helpers"
 
@@ -16,11 +16,11 @@ const ListAlbumsList = () => {
 
     const dispatch = useDispatch();
 
-    const listMediaItems = (album: Album) => { dispatch(mediaItemsList(album.id)); };
+    const openAlbum = (album: Album) => { dispatch(mediaItemsOpen(album.id)); };
 
     const albumThumbnail = (album: Album) => {
         return <li key={album.id}>
-            <figure onClick={() => { listMediaItems(album) }}>
+            <figure onClick={() => { openAlbum(album) }}>
                 <img src={album.coverPhotoBaseUrl} alt={album.title} />
                 <figcaption>{album.title}</figcaption>
             </figure>

@@ -1,6 +1,6 @@
 import {Action} from "redux";
 import {AlbumsResult} from "./albums";
-import {MediaItemsResult} from "./mediaItems";
+import {MediaItems} from "./mediaItems";
 
 export interface Auth {
     token?: string;
@@ -9,7 +9,7 @@ export interface Auth {
 export interface State {
     auth: Auth;
     albums: AlbumsResult;
-    mediaItems: MediaItemsResult;
+    mediaItems: MediaItems;
 }
 
 export interface ErrorAction extends Action {

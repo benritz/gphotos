@@ -11,7 +11,7 @@ import * as serviceWorker from './serviceWorker';
 import { State } from './types'
 import {authSignOn, authReducer, authRedirect, authGetToken, authRefreshEpic} from './auth';
 import { albumsList, albumsReducer, albumsListEpic } from './albums';
-import { mediaItemsList, mediaItemsReducer, mediaItemsListEpic } from './mediaItems';
+import { mediaItemsOpen, mediaItemsReducer, mediaItemsOpenEpic, mediaItemsListEpic } from './mediaItems';
 
 const epicMiddleware = createEpicMiddleware<AnyAction, AnyAction, State, any>();
 
@@ -23,7 +23,7 @@ const store = createStore(
     applyMiddleware(logger, epicMiddleware)
 );
 
-epicMiddleware.run(combineEpics(albumsListEpic, mediaItemsListEpic, authRefreshEpic));
+epicMiddleware.run(combineEpics(albumsListEpic, mediaItemsOpenEpic, mediaItemsListEpic, authRefreshEpic));
 
 const authenticate = () => {
     const token = authGetToken();
@@ -32,7 +32,7 @@ const authenticate = () => {
             const dispatch = store.dispatch;
             dispatch(authSignOn(token as string));
             dispatch(albumsList());
-            dispatch(mediaItemsList());
+            dispatch(mediaItemsOpen());
         });
         return;
     }

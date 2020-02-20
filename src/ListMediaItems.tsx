@@ -9,62 +9,98 @@ import {scrolledToBottom} from "./helpers"
 
 import './ListMediaItems.css'
 
+interface CurrentResult {
+    key: string
+    result: MediaItemsResult
+}
+
+const currentResultSelector = createSelector<State, Map<string, MediaItemsResult>, string|undefined, CurrentResult|undefined>(
+        (state) => state.mediaItems.results,
+        (state) => state.mediaItems.currentKey,
+        (results, key) => {
+            if (key) {
+                const result = results.get(key);
+                if (result) {
+                    return { key, result: result };
+                }
+            }
+
+            return void 0;
+        }
+    );
+
 const ListMediaItemsTitle = () => {
-    const title = useSelector(createSelector<State, MediaItemsResult, AlbumsResult, string>(
-        (state) => state.mediaItems,
+    const title = useSelector(createSelector<State, CurrentResult|undefined, AlbumsResult, string>(
+        currentResultSelector,
         (state) => state.albums,
-        (mediaItemsResult, albumsResult) => {
-            const { albumId } = mediaItemsResult;
-            if (albumId) {
+        (currentResult, albumsResult) => {
+            if (currentResult) {
+                const { result: { albumId } } = currentResult;
+
+                if (!albumId) {
+                    return 'Your photos';
+                }
+
                 const album = albumsResult.albums.find(album => album.id === albumId);
                 if (album) {
                     return album.title;
                 }
             }
-            return 'Your photos';
+
+            return '';
         }));
+
+    console.log('NEW TITLE', title);
 
     return <h1>{title}</h1>;
 };
 
 const ListMediaItemsList = () => {
-    const mediaItems = useSelector(createSelector<State, MediaItemsResult, MediaItem[]>(
-        (state) => state.mediaItems,
-        (mediaItemsResult) => mediaItemsResult.mediaItems));
+    const currentResult = useSelector(currentResultSelector);
 
-    const listItems = mediaItems.map((mediaItem: MediaItem) => (<li key={mediaItem.id}><a href={mediaItem.productUrl}><img src={mediaItem.baseUrl} alt={mediaItem.filename} /></a></li>));
+    if (currentResult) {
+        const { result } = currentResult;
 
-    return listItems.length ? <ul>{listItems}<li>&nbsp;</li></ul> : null;
+        const listItems = result.mediaItems.map((mediaItem: MediaItem) => (<li key={mediaItem.id}><a href={mediaItem.productUrl}><img src={mediaItem.baseUrl} alt={mediaItem.filename} /></a></li>));
+        if (listItems.length) {
+            return <ul>{listItems}<li>&nbsp;</li></ul>;
+        }
+    }
+
+    return null;
 };
 
 const ListMediaItemsStatus = () => {
-    const {
-        state,
-        mediaItems,
-        albumId,
-        nextPageToken
-    } = useSelector<State, MediaItemsResult>((state) => state.mediaItems);
+    const currentResult = useSelector(currentResultSelector);
 
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (state === MediaItemsState.MoreResults) {
-            return scrolledToBottom('main', () => {
-                dispatch(mediaItemsList(albumId, nextPageToken));
-            });
+        if (currentResult) {
+            const { key, result: { state, nextPageToken } } = currentResult;
+
+            if (state === MediaItemsState.MoreResults) {
+                return scrolledToBottom('main', () => {
+                    dispatch(mediaItemsList(key, nextPageToken));
+                });
+            }
         }
     });
 
-    switch (state) {
-        case MediaItemsState.Loading:
-            return <p className="status loading">Loading your photos and videos&hellip;</p>;
-        case MediaItemsState.Complete:
-            if (mediaItems.length === 0) {
-                return <p className="status empty">You have no photos or videos.</p>;
-            }
-            break;
-        case MediaItemsState.Error:
-            return <p className="status error">There was a problem listing your photos and videos.</p>;
+    if (currentResult) {
+        const { result: { state, mediaItems } } = currentResult;
+
+        switch (state) {
+            case MediaItemsState.Loading:
+                return <p className="status loading">Loading your photos and videos&hellip;</p>;
+            case MediaItemsState.Complete:
+                if (mediaItems.length === 0) {
+                    return <p className="status empty">You have no photos or videos.</p>;
+                }
+                break;
+            case MediaItemsState.Error:
+                return <p className="status error">There was a problem listing your photos and videos.</p>;
+        }
     }
 
     return null;

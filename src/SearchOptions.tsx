@@ -1,6 +1,6 @@
 import React from 'react'
 import {useDispatch} from 'react-redux'
-import {mediaItemsList} from './mediaItems'
+import {mediaItemsOpen} from './mediaItems'
 
 import './SearchOptions.css'
 
@@ -8,7 +8,7 @@ const SearchOptions = () => {
     const dispatch = useDispatch();
 
     const listMostRecent = () => {
-        dispatch(mediaItemsList());
+        dispatch(mediaItemsOpen());
     };
 
     return <ul className='SearchOptions'>
