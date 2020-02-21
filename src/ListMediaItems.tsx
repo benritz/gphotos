@@ -9,33 +9,28 @@ import {scrolledToBottom} from "./helpers"
 
 import './ListMediaItems.css'
 
-interface CurrentResult {
-    key: string
-    result: MediaItemsResult
-}
+const resultsSelector = (state: State) => state.mediaItems.results;
+const currentKeySelector = (state: State) => state.mediaItems.currentKey;
 
-const currentResultSelector = createSelector<State, Map<string, MediaItemsResult>, string|undefined, CurrentResult|undefined>(
-        (state) => state.mediaItems.results,
-        (state) => state.mediaItems.currentKey,
-        (results, key) => {
-            if (key) {
-                const result = results.get(key);
-                if (result) {
-                    return { key, result: result };
-                }
-            }
-
-            return void 0;
+const currentResultSelector = createSelector<State, Map<string, MediaItemsResult>, string|undefined, MediaItemsResult|undefined>(
+    resultsSelector,
+    currentKeySelector,
+    (results, key) => {
+        if (key) {
+            return results.get(key);
         }
-    );
+
+        return void 0;
+    }
+);
 
 const ListMediaItemsTitle = () => {
-    const title = useSelector(createSelector<State, CurrentResult|undefined, AlbumsResult, string>(
+    const title = useSelector(createSelector<State, MediaItemsResult|undefined, AlbumsResult, string>(
         currentResultSelector,
         (state) => state.albums,
-        (currentResult, albumsResult) => {
-            if (currentResult) {
-                const { result: { albumId } } = currentResult;
+        (result, albumsResult) => {
+            if (result) {
+                const { albumId } = result;
 
                 if (!albumId) {
                     return 'Your photos';
@@ -50,17 +45,13 @@ const ListMediaItemsTitle = () => {
             return '';
         }));
 
-    console.log('NEW TITLE', title);
-
     return <h1>{title}</h1>;
 };
 
 const ListMediaItemsList = () => {
-    const currentResult = useSelector(currentResultSelector);
+    const result = useSelector(currentResultSelector);
 
-    if (currentResult) {
-        const { result } = currentResult;
-
+    if (result) {
         const listItems = result.mediaItems.map((mediaItem: MediaItem) => (<li key={mediaItem.id}><a href={mediaItem.productUrl}><img src={mediaItem.baseUrl} alt={mediaItem.filename} /></a></li>));
         if (listItems.length) {
             return <ul>{listItems}<li>&nbsp;</li></ul>;
@@ -71,13 +62,14 @@ const ListMediaItemsList = () => {
 };
 
 const ListMediaItemsStatus = () => {
-    const currentResult = useSelector(currentResultSelector);
+    const key = useSelector(currentKeySelector);
+    const result = useSelector(currentResultSelector);
 
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (currentResult) {
-            const { key, result: { state, nextPageToken } } = currentResult;
+        if (key && result) {
+            const { state, nextPageToken } = result;
 
             if (state === MediaItemsState.MoreResults) {
                 return scrolledToBottom('main', () => {
@@ -87,8 +79,8 @@ const ListMediaItemsStatus = () => {
         }
     });
 
-    if (currentResult) {
-        const { result: { state, mediaItems } } = currentResult;
+    if (result) {
+        const { state, mediaItems } = result;
 
         switch (state) {
             case MediaItemsState.Loading:
