@@ -4,14 +4,17 @@ import { Provider, batch } from 'react-redux';
 import {createStore, applyMiddleware, combineReducers, AnyAction} from 'redux';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 import logger from 'redux-logger'
+import { enableMapSet } from 'immer'
 
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { State } from './types'
-import {authSignOn, authReducer, authRedirect, authGetToken, authRefreshEpic} from './auth';
+import { authSignOn, authReducer, authRedirect, authGetToken, authRefreshEpic } from './auth';
 import { albumsList, albumsReducer, albumsListEpic } from './albums';
 import { mediaItemsOpen, mediaItemsReducer, mediaItemsOpenEpic, mediaItemsListEpic } from './mediaItems';
+
+enableMapSet();
 
 const epicMiddleware = createEpicMiddleware<AnyAction, AnyAction, State, any>();
 
