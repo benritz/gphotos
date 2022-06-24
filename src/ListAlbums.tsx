@@ -10,9 +10,9 @@ import {scrolledToBottom} from "./helpers"
 import './ListAlbums.css'
 
 const ListAlbumsList = () => {
-    const albums = useSelector(createSelector<State, AlbumsResult, Album[]>(
-        (state) => state.albums,
-        (albumsResult) => albumsResult.albums));
+    const albums = useSelector(createSelector(
+        (state: State) => state.albums,
+        (albumsResult: AlbumsResult) => albumsResult.albums));
 
     const dispatch = useDispatch();
 

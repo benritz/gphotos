@@ -2,8 +2,7 @@ import React, {useEffect} from "react"
 import {useDispatch, useSelector} from 'react-redux'
 import {createSelector} from "reselect"
 
-import {MediaItem, mediaItemsList, MediaItemsResult, MediaItemsState} from "./mediaItems"
-import {AlbumsResult} from "./albums"
+import {MediaItem, mediaItemsList, MediaItemsState} from "./mediaItems"
 import {State} from "./types"
 import {scrolledToBottom} from "./helpers"
 
@@ -12,9 +11,8 @@ import './ListMediaItems.css'
 const resultsSelector = (state: State) => state.mediaItems.results;
 const currentKeySelector = (state: State) => state.mediaItems.currentKey;
 
-const currentResultSelector = createSelector<State, Map<string, MediaItemsResult>, string|undefined, MediaItemsResult|undefined>(
-    resultsSelector,
-    currentKeySelector,
+const currentResultSelector = createSelector(
+    [resultsSelector, currentKeySelector],
     (results, key) => {
         if (key) {
             return results.get(key);
@@ -25,9 +23,8 @@ const currentResultSelector = createSelector<State, Map<string, MediaItemsResult
 );
 
 const ListMediaItemsTitle = () => {
-    const title = useSelector(createSelector<State, MediaItemsResult|undefined, AlbumsResult, string>(
-        currentResultSelector,
-        (state) => state.albums,
+    const title = useSelector(createSelector(
+        [currentResultSelector, (state: State) => state.albums],
         (result, albumsResult) => {
             if (result) {
                 const { albumId } = result;
